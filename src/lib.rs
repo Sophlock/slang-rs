@@ -4,13 +4,13 @@ pub mod reflection;
 
 #[cfg(test)]
 mod tests;
+mod structs;
 
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::ptr::{null, null_mut};
 
 pub(crate) use shader_slang_sys as sys;
-
 pub use sys::{
 	SlangBindingType as BindingType, SlangCompileTarget as CompileTarget,
 	SlangDebugInfoLevel as DebugInfoLevel, SlangDeclKind as DeclKind,
@@ -24,6 +24,7 @@ pub use sys::{
 	SlangTypeKind as TypeKind, SlangUUID as UUID, slang_CompilerOptionName as CompilerOptionName,
 	slang_Modifier as Modifier,
 };
+use structs::specialization_arg::SpecializationArg;
 
 macro_rules! vcall {
 	($self:expr, $method:ident($($args:expr),*)) => {
@@ -477,6 +478,31 @@ impl ComponentType {
 
 		Ok(Metadata(IUnknown(
 			std::ptr::NonNull::new(metadata as *mut _).unwrap(),
+		)))
+	}
+
+	pub fn specialize(
+		&self,
+		specialization: &[SpecializationArg]
+	) -> Result<ComponentType> {
+		let mut specialized = null_mut();
+		let mut diagnostics = null_mut();
+
+		result_from_blob(
+			vcall!(
+				self,
+				specialize(
+					specialization.as_ptr() as _,
+					specialization.len() as i64,
+					&mut specialized,
+					&mut diagnostics
+				)
+			),
+			diagnostics,
+		)?;
+
+		Ok(ComponentType(IUnknown(
+			std::ptr::NonNull::new(specialized as *mut _).unwrap(),
 		)))
 	}
 }
