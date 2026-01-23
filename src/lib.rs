@@ -1,10 +1,10 @@
 //! Rust bindings for the Slang shader language compiler
 
 pub mod reflection;
+pub mod structs;
 
 #[cfg(test)]
 mod tests;
-mod structs;
 
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
